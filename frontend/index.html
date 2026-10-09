@@ -1,0 +1,115 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Anime Layer Studio</title>
+<style>
+:root{color-scheme:dark;--bg:#10131a;--panel:#191e28;--line:#303746;--muted:#9da7b5;--accent:#6672ff;--good:#6ee7a2;--bad:#ff7d8a}
+*{box-sizing:border-box}body{font-family:Segoe UI,Arial,sans-serif;background:var(--bg);color:#eee;max-width:1220px;margin:28px auto;padding:0 18px}
+h1{margin:0 0 5px;font-size:clamp(25px,4vw,34px)}h2{margin-top:0}.sub,.muted{color:var(--muted)}.sub{line-height:1.5}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:18px;margin-top:16px}
+label{display:block;margin:10px 0 5px;color:#bfc8d6}input,select,button{font:inherit;border-radius:8px;border:1px solid #3a4353;padding:10px;background:#0f131a;color:#fff}input,select{width:100%}button{cursor:pointer;background:#5865f2;border:0;font-weight:700}button:disabled{opacity:.45;cursor:not-allowed}
+.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}.bar{height:12px;background:var(--line);border-radius:9px;overflow:hidden;margin-top:14px}.fill{height:100%;width:0;background:var(--accent);transition:width .2s}.stage{font-size:17px;margin-top:10px}.ok{color:var(--good)}.bad{color:var(--bad)}a{color:#aeb5ff}
+.actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:12px;align-items:center}.actions a{display:none;padding:8px 10px;border:1px solid #454f63;border-radius:99px;text-decoration:none}.actions button{width:auto;padding:9px 14px}
+.layout{display:grid;grid-template-columns:minmax(260px,360px) minmax(0,1fr);gap:16px}.layers{max-height:600px;overflow:auto}.layer{display:flex;gap:10px;align-items:center;padding:9px;border-bottom:1px solid #2b313d;cursor:pointer;border-radius:7px}.layer:hover,.layer:focus{background:#222936;outline:none}.thumb{width:52px;height:52px;object-fit:contain;background:#0d1015;border-radius:5px;flex:none}.meta{font-size:12px;color:var(--muted);margin-top:3px}.preview{min-height:380px;background:repeating-conic-gradient(#252a34 0 25%,#1c2028 0 50%) 50%/24px 24px;display:flex;align-items:center;justify-content:center;border-radius:10px;overflow:hidden}.preview img{max-width:100%;max-height:640px;object-fit:contain}.pill{font-size:12px;padding:4px 8px;border:1px solid #394253;border-radius:99px;color:#bfc8d6}
+footer{margin:24px 0 36px;color:var(--muted);font-size:12px}
+@media(max-width:850px){.layout,.grid{grid-template-columns:1fr}.preview{min-height:280px}}
+</style>
+</head>
+<body>
+<header><h1>Anime Layer Studio <span class="pill">v0.4.7</span></h1><div class="sub">See-through V3 · Character layer decomposition · PSD inspector · Full-canvas PNG export</div></header>
+<section class="card">
+  <h2>Character decomposition</h2>
+  <label for="file">Character image</label><input id="file" type="file" accept="image/png,image/jpeg,image/webp">
+  <div class="grid">
+    <div><label for="mode">Mode</label><select id="mode"><option value="blockswap">Blockswap — Recommended for 8GB VRAM</option><option value="quantized">NF4 — Experimental</option></select></div>
+    <div><label for="res">Resolution</label><select id="res"><option>768</option><option selected>1024</option><option>1280</option></select></div>
+    <div><label for="steps">LayerDiff steps</label><input id="steps" type="number" value="24" min="10" max="40"></div>
+    <div><label for="depth">Depth resolution</label><input id="depth" type="number" value="720" min="384" max="768"></div>
+  </div>
+  <label for="seed">Seed</label><input id="seed" type="number" value="42">
+  <button id="startBtn" style="width:100%;margin-top:14px" onclick="startJob()">START DECOMPOSITION</button>
+</section>
+<section class="card" aria-live="polite">
+  <div id="stage" class="stage">Waiting for input…</div><div class="bar"><div id="fill" class="fill"></div></div><p id="msg" class="sub"></p>
+  <div class="actions"><a id="psd">Download PSD</a><a id="log" target="_blank" rel="noopener">Pipeline log</a><a id="zip">Download all layer PNGs (ZIP)</a></div>
+</section>
+<section id="inspector" class="card" style="display:none">
+  <h2>PSD layer inspector</h2><div class="sub" id="docinfo"></div>
+  <div class="layout" style="margin-top:14px"><div class="layers" id="layers" aria-label="PSD layers"></div><div><div class="preview"><img id="preview" alt="Selected layer preview" style="display:none"></div><div id="layerinfo" class="sub" style="margin-top:10px"></div></div></div>
+</section>
+<footer>Local interface · Model weights and the See-through source checkout are managed separately from this project.</footer>
+<script>
+let pollTimer=null;
+let currentJob=null;
+let documentInfo=null;
+const $=id=>document.getElementById(id);
+const showLink=(id,url)=>{$(id).href=url;$(id).style.display='inline-block'};
+
+async function readResponse(response){
+  const data=await response.json().catch(()=>({detail:'Unexpected server response'}));
+  if(!response.ok)throw new Error(data.detail||'Request failed');
+  return data;
+}
+
+async function startJob(){
+  const file=$('file').files[0];
+  if(!file){alert('Choose a character image first.');return;}
+  const params=new URLSearchParams({resolution:$('res').value,steps:$('steps').value,depth_resolution:$('depth').value,seed:$('seed').value,mode:$('mode').value});
+  const body=new FormData();body.append('file',file);
+  $('startBtn').disabled=true;$('stage').className='stage';$('stage').textContent='Submitting job…';$('msg').textContent='';$('fill').style.width='0%';
+  ['psd','log','zip'].forEach(id=>$(id).style.display='none');
+  try{
+    const job=await readResponse(await fetch('/api/jobs?'+params,{method:'POST',body}));
+    currentJob=job.id;
+    if(pollTimer)clearInterval(pollTimer);
+    pollTimer=setInterval(()=>pollJob(job.id),1000);
+    await pollJob(job.id);
+  }catch(error){$('stage').className='stage bad';$('stage').textContent='Could not start';$('msg').textContent=error.message;$('startBtn').disabled=false;}
+}
+
+async function pollJob(id){
+  try{
+    const job=await readResponse(await fetch('/api/jobs/'+encodeURIComponent(id)));
+    $('stage').textContent=(job.stage||job.status)+' — '+Number(job.progress||0).toFixed(0)+'%';
+    $('fill').style.width=Math.max(0,Math.min(100,Number(job.progress)||0))+'%';
+    $('msg').textContent=job.message||'';
+    showLink('log',job.log);
+    if(job.status==='completed'){
+      $('stage').className='stage ok';showLink('psd','/api/jobs/'+id+'/psd');showLink('zip','/api/jobs/'+id+'/export_zip');
+      if(pollTimer){clearInterval(pollTimer);pollTimer=null;}
+      $('startBtn').disabled=false;
+      await loadInspector(id);
+    }else if(job.status==='failed'){
+      $('stage').className='stage bad';if(pollTimer){clearInterval(pollTimer);pollTimer=null;}$('startBtn').disabled=false;
+    }
+  }catch(error){$('msg').textContent=error.message;}
+}
+
+async function loadInspector(id){
+  try{
+    const info=await readResponse(await fetch('/api/jobs/'+id+'/inspect'));
+    documentInfo=info;$('inspector').style.display='block';
+    $('docinfo').textContent=`Canvas: ${info.width} × ${info.height} · Layers: ${info.layer_count}`;
+    const box=$('layers');box.replaceChildren();
+    info.layers.forEach(layer=>{
+      const row=document.createElement('div');row.className='layer';row.tabIndex=0;row.setAttribute('role','button');
+      const thumb=document.createElement('img');thumb.className='thumb';thumb.alt='';thumb.src=`/api/jobs/${id}/layer/${layer.id}/preview`;
+      const text=document.createElement('div');text.style.minWidth='0';
+      const name=document.createElement('div');name.textContent=layer.name||`Layer ${layer.id+1}`;
+      const meta=document.createElement('div');meta.className='meta';meta.textContent=`${layer.group?'GROUP':'PIXEL'} · ${layer.width}×${layer.height} · ${layer.visible?'visible':'hidden'}`;
+      text.append(name,meta);row.append(thumb,text);
+      const select=()=>showLayer(id,layer);row.addEventListener('click',select);row.addEventListener('keydown',event=>{if(event.key==='Enter'||event.key===' '){event.preventDefault();select();}});
+      box.append(row);
+    });
+  }catch(error){$('layerinfo').textContent='Could not inspect the PSD: '+error.message;}
+}
+
+function showLayer(id,layer){
+  $('preview').src=`/api/jobs/${id}/layer/${layer.id}/preview`;$('preview').style.display='block';
+  $('layerinfo').textContent=`${layer.name} · canvas ${documentInfo.width} × ${documentInfo.height} · bounds [${layer.bbox.join(', ')}]`;
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,28 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyd
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# Local environments and editor files
+.venv/
+venv/
+env/
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db
+
+# Local settings, third-party source, model assets, and generated jobs
+/config.json
+/third_party/
+/models/
+/workspace/
+
+# Temporary files
+*.tmp
+*.log

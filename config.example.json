@@ -1,0 +1,7 @@
+{
+  "see_through_repo": "third_party/see-through",
+  "python_executable": "python",
+  "hf_home": "models/huggingface",
+  "workspace": "workspace",
+  "max_jobs": 1
+}
