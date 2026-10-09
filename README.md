@@ -1,137 +1,158 @@
 # Anime Layer Studio
 
-Anime Layer Studio is a local Windows application for AI-assisted anime-character layer decomposition. It runs the See-through V3 inference pipeline, lets you inspect the resulting PSD layers, and exports each layer as a full-canvas transparent PNG or ZIP archive.
+**AI-assisted anime character decomposition for layered 2D animation workflows.**  
+Turn a single character image into an editable layer stack, inspect the generated PSD, and export every layer as a transparent PNG.
 
-> **This repository does not include the upscaler.** The model weights are downloaded separately and are never committed to Git.
+> **Version 1.0.0 · Initial release**  
+> Windows 10/11 · NVIDIA GPU · Python 3.12  
+> **The upscaler is not included.** Model weights are downloaded separately and are not committed to this repository.
 
-## Features
+<p align="center">
+  <strong>Decompose → Inspect → Export → Animate</strong>
+</p>
 
-- See-through V3 character decomposition with **Blockswap** (the default; intended for lower-VRAM systems) and optional experimental NF4 mode.
-- Controls for inference resolution, step count, depth resolution, and seed.
-- Job progress and local pipeline logs.
-- PSD layer inspector, previews, and bounding-box details.
-- Transparent full-canvas PNG export and one-click ZIP export.
-- Local-only web server at `127.0.0.1`; it is not designed to be exposed directly to the public internet.
+## What it does
 
-## Quick start (Windows 10/11)
+Anime Layer Studio provides a local web interface around the See-through V3 inference pipeline. It is designed to support anime character artwork preparation for manual rigging and 2D animation.
 
-### Requirements
+- **Character layer decomposition** using See-through V3.
+- **Blockswap mode** as the recommended starting point for lower-VRAM systems.
+- **Experimental NF4 mode** for users who install the additional dependencies and models.
+- **Inference controls** for resolution, sampling steps, depth resolution, and seed.
+- **Live job status and logs** for monitoring processing.
+- **PSD layer inspector** with layer previews, dimensions, visibility, and bounds.
+- **Transparent PNG export** with full-canvas alignment.
+- **One-click ZIP export** of the decomposed PNG layers.
+- **Local-first interface** bound to `127.0.0.1`.
 
-- 64-bit Windows 10/11.
-- **64-bit Python 3.12** and the Python Launcher (`py`). Download it from [python.org](https://www.python.org/downloads/windows/) and enable the launcher during setup.
-- [Git for Windows](https://git-scm.com/download/win), used to fetch the upstream See-through source.
-- An NVIDIA GPU with a working driver. Blockswap is the recommended starting mode on an 8 GB VRAM GPU, but memory use varies with input size and settings.
-- A reliable internet connection for installation and model downloads.
-- At least **20 GB of free disk space** for the default models and working files. The standard model download is approximately **13.5 GB**; the actual size may change upstream.
+## Quick start
 
-### 1. Install the application
+The easiest way to install on Windows is with the three launcher files at the repository root.
 
-1. Download this repository as a ZIP from GitHub and extract the whole folder to a permanent location, such as `D:\AI Projects\AnimeLayerStudio`. Do not run it from inside the ZIP.
-2. Double-click **`INSTALL_ANIME_LAYER_STUDIO.bat`** in the project root.
-3. Let the terminal finish. The installer creates a project-local `.venv`, installs CUDA-enabled PyTorch and the See-through inference dependencies, clones the upstream source under `third_party/see-through`, and creates local folders/configuration.
-4. If Windows asks for network access or Python installation permission, review the prompt and allow it as appropriate. An internet connection is required.
+### 1. Requirements
 
-The installer uses a project-local virtual environment to avoid replacing Python packages in other projects. It installs the PyTorch CUDA 12.8 wheel set currently specified by the upstream See-through setup. A compatible NVIDIA driver is still required for GPU inference.
+- Windows 10 or Windows 11, 64-bit.
+- Python **3.12 (64-bit)** with the Python Launcher (`py`).
+- Git for Windows.
+- NVIDIA GPU with a compatible driver.
+- Internet access for setup and model downloads.
+- At least **20 GB of free disk space** recommended for default model downloads, Python packages, and working files.
 
-### 2. Download model weights
+### 2. Install
 
-1. Double-click **`DOWNLOAD_MODELS.bat`** in the project root.
-2. The downloader fetches the two standard Blockswap models from Hugging Face into `models/huggingface/hub/` and verifies that each has a `model_index.json`.
-3. It asks whether to also download the optional NF4 models. Choose `N` for the default Blockswap workflow. Choose `Y` only when you want the experimental quantized mode; NF4 adds roughly another 5 GB and has additional dependency requirements.
+1. Download the repository using **Code → Download ZIP**, then extract it to a permanent folder such as `D:\\AI Projects\\AnimeLayerStudio`. Do not run it from inside the ZIP.
+2. Double-click **`INSTALL_ANIME_LAYER_STUDIO.bat`**.
+3. Wait for the terminal to report setup complete. The installer creates a project-local `.venv`, installs the Python dependencies, obtains the upstream See-through source, and prepares local folders.
 
-The download is explicit and separate from app startup: the application will not silently download multi-gigabyte files when you launch it or submit an inference job. If a download is interrupted, run `DOWNLOAD_MODELS.bat` again to retry/resume.
+This setup uses its own virtual environment; it should not replace packages in other Python projects. Installation and model retrieval need an internet connection.
 
-### 3. Run Anime Layer Studio
+### 3. Download models
 
-Double-click **`RUN_ANIME_LAYER_STUDIO.bat`** in the project root. Keep its terminal window open, then open this address in your browser:
+1. Double-click **`DOWNLOAD_MODELS.bat`**.
+2. Choose the default **Blockswap** models first. The standard pair is approximately **13.5 GB** (upstream sizes may change).
+3. The downloader verifies the downloaded model folders before it exits. If interrupted, run the same file again to retry.
 
-**http://127.0.0.1:7860**
+Optional NF4 models add approximately 5 GB and require additional dependencies. Use the NF4 option only if you intend to run the experimental quantized mode.
 
-Upload a PNG, JPEG, or WebP character image, leave the mode set to **Blockswap** for the first run, choose your settings, and start decomposition. After the job finishes, inspect the PSD layers and export the PSD or ZIP of transparent PNG layers.
+### 4. Launch
 
-To stop the local server, focus the terminal and press `Ctrl+C`.
+1. Double-click **`RUN_ANIME_LAYER_STUDIO.bat`**.
+2. Keep the terminal window open.
+3. Open **http://127.0.0.1:7860** in your browser.
 
-## Model files and licenses
+Upload a PNG, JPEG, or WebP character image, start with **Blockswap**, and run decomposition. When processing finishes, inspect the PSD layers and download the PSD or a ZIP containing transparent layer PNGs. To stop the app, focus the terminal and press `Ctrl+C`.
 
-### Standard Blockswap models
+## One-click files
 
-`DOWNLOAD_MODELS.bat` downloads the following public repositories and saves them into the exact folders used by this application:
+| File | Purpose |
+|---|---|
+| `INSTALL_ANIME_LAYER_STUDIO.bat` | Creates the local Python environment and installs dependencies |
+| `DOWNLOAD_MODELS.bat` | Downloads the standard models and offers optional NF4 models |
+| `RUN_ANIME_LAYER_STUDIO.bat` | Starts the local web interface |
 
-| Purpose | Hugging Face repository | Local folder |
+If a launcher fails, keep its terminal window open and read the error message before closing it.
+
+## Models
+
+Model files are intentionally not stored in GitHub. The model downloader places them under `models/huggingface/hub/`.
+
+| Purpose | Model repository | Local folder |
 |---|---|---|
-| Layer generation | [layerdifforg/seethroughv0.0.2_layerdiff3d](https://huggingface.co/layerdifforg/seethroughv0.0.2_layerdiff3d) | `models/huggingface/hub/seethroughv0.0.2_layerdiff3d/` |
-| Anime depth estimation | [layerdifforg/seethroughv0.0.1_marigold](https://huggingface.co/layerdifforg/seethroughv0.0.1_marigold) | `models/huggingface/hub/seethroughv0.0.1_marigold/` |
+| Layer generation | [layerdifforg/seethroughv0.0.2_layerdiff3d](https://huggingface.co/layerdifforg/seethroughv0.0.2_layerdiff3d) | `seethroughv0.0.2_layerdiff3d/` |
+| Depth estimation | [layerdifforg/seethroughv0.0.1_marigold](https://huggingface.co/layerdifforg/seethroughv0.0.1_marigold) | `seethroughv0.0.1_marigold/` |
 
-The folders must contain a `model_index.json` file. Do not rename the folders after downloading them.
-
-### Optional NF4 models
-
-The optional experimental quantized mode uses these additional repositories:
+Experimental NF4 models:
 
 - [24yearsold/seethroughv0.0.2_layerdiff3d_nf4](https://huggingface.co/24yearsold/seethroughv0.0.2_layerdiff3d_nf4)
 - [24yearsold/seethroughv0.0.1_marigold_nf4](https://huggingface.co/24yearsold/seethroughv0.0.1_marigold_nf4)
 
-To use NF4 after downloading its weights, install the upstream NF4 dependencies from the project root in PowerShell:
+The folders must contain `model_index.json`. Do not rename them after downloading.
 
-```powershell
-.\.venv\Scripts\python.exe -m pip install -r .\third_party\see-through\requirements-inference-bnb.txt
-```
+## Example workflow
 
-Then launch the app and select the experimental NF4 mode. If dependency installation fails on your Windows/Python combination, use Blockswap instead.
+1. Prepare a clean character image with the character visible against a suitable background.
+2. Run decomposition with Blockswap.
+3. Inspect generated PSD layers and layer previews.
+4. Export all layers to transparent PNG files.
+5. Bring those PNGs into your preferred rigging or animation software and adjust the layer stack manually.
 
-### Important license note
+The application exports layers; it does not automatically create a fully rigged, production-ready puppet. Layer quality varies with the input image and model result.
 
-The root `LICENSE` file is the MIT license for original Anime Layer Studio project files only. It does **not** relicense third-party code, model weights, or dependencies. Review the licenses, `README`, `LICENSE`, and `NOTICE` files supplied by the [upstream See-through code repository](https://github.com/shitagaki-lab/see-through) and each model repository before using, modifying, or redistributing them. Model weights can carry terms inherited from the models they are derived from. Do not upload model weights to your GitHub repository unless you have verified that redistribution is permitted.
+## License and third-party models
 
-## GitHub Desktop workflow
+The root [MIT License](LICENSE) applies to the original Anime Layer Studio project files only. It does not relicense the upstream [See-through source](https://github.com/shitagaki-lab/see-through), model weights, dependencies, or any third-party assets. Review the license and usage terms of each upstream repository before use or redistribution. Do not commit model weights or third-party files to this repository unless their terms explicitly permit it.
 
-1. Extract the downloaded project ZIP into a permanent folder.
-2. Open GitHub Desktop and select **File → Add Local Repository**. Select the project folder. If GitHub Desktop says it is not a repository yet, choose the option to create a repository in that folder.
-3. Review the files, enter a first commit message such as `Prepare Anime Layer Studio project`, and click **Commit to main**.
-4. Click **Publish repository** and choose Private or Public.
+## Privacy and safety
 
-Before publishing, confirm that `models/`, `third_party/`, `workspace/`, `.venv/`, and `config.json` are not staged. The `.gitignore` excludes these local directories/files.
-
-## Files and folders
-
-| Path | Purpose | Commit to Git? |
-|---|---|---|
-| `app/` | FastAPI backend, job manager, PSD export | Yes |
-| `frontend/` | Local browser UI | Yes |
-| `scripts/` | Installer, model downloader, and launcher | Yes |
-| `INSTALL_ANIME_LAYER_STUDIO.bat` | Root-level one-click installer | Yes |
-| `DOWNLOAD_MODELS.bat` | Root-level one-click model downloader | Yes |
-| `RUN_ANIME_LAYER_STUDIO.bat` | Root-level one-click app launcher | Yes |
-| `LICENSE` | MIT license for original project files, with third-party scope note | Yes |
-| `config.json` | Local path/settings overrides | No |
-| `models/` | Model weights | No |
-| `third_party/` | Upstream See-through checkout | No |
-| `workspace/` | Input files, job logs, intermediate outputs | No |
-| `.venv/` | Project-local Python environment | No |
+- The app binds to `127.0.0.1` and is intended for local use.
+- Do not expose the local server to the public internet.
+- Your model files, uploaded images, jobs, logs, and outputs are local files; keep them out of Git commits.
+- The upscaler and its dependencies are not part of this release.
 
 ## Troubleshooting
 
-**The installer cannot find Python 3.12.** Install 64-bit Python 3.12 from [python.org](https://www.python.org/downloads/windows/), enable the Python Launcher, and run the installer again.
+**Python 3.12 is not found**  
+Install 64-bit Python 3.12 from [python.org](https://www.python.org/downloads/windows/) and enable the Python Launcher, then run the installer again.
 
-**The installer fails while installing Python packages.** Check the full error shown in the terminal and verify internet access. Some upstream Python packages may change their Windows support; the error may need to be handled according to the upstream See-through installation notes. Re-running the installer is safe for an existing `.venv` in most cases.
+**Git is not found**  
+Install [Git for Windows](https://git-scm.com/download/win), then rerun the installer.
 
-**The installer reports CUDA unavailable.** Update/install your NVIDIA driver and re-run `INSTALL_ANIME_LAYER_STUDIO.bat`. The UI may start without CUDA, but AI inference needs a supported NVIDIA GPU and CUDA-enabled PyTorch.
+**Model missing**  
+Run `DOWNLOAD_MODELS.bat` again and confirm the expected local model folder includes `model_index.json`.
 
-**The app says a model is missing.** Run `DOWNLOAD_MODELS.bat` and wait for it to verify both model folders. Confirm each expected folder contains `model_index.json`.
+**CUDA is unavailable**  
+Update your NVIDIA driver and reinstall using `INSTALL_ANIME_LAYER_STUDIO.bat`. The interface may start without CUDA, but inference requires a compatible NVIDIA GPU and CUDA-enabled PyTorch.
 
-**The model download stops or fails.** Check your disk space and internet connection, then run `DOWNLOAD_MODELS.bat` again. Keep the destination folders in place so the downloader can reuse completed files.
+**GPU out of memory**  
+Use Blockswap, reduce resolution, close other GPU-heavy applications, and process one image at a time. Actual VRAM use varies by input and settings.
 
-**CUDA runs out of memory.** Keep Blockswap selected, lower the inference resolution, close other GPU-heavy applications, and process one image at a time.
+**The browser cannot connect**  
+Keep the launcher terminal open and visit http://127.0.0.1:7860.
 
-**The browser cannot connect.** Keep the launcher terminal open and visit `http://127.0.0.1:7860`. The app binds to localhost only.
+## Developer checks
 
-## Development checks
-
-Use the project's environment after installation:
+After installing the project environment, run:
 
 ```powershell
 .\.venv\Scripts\python.exe -m compileall -q app scripts tests
 .\.venv\Scripts\python.exe -m unittest discover -s tests -v
 ```
 
-The lightweight tests do not run GPU inference or download model weights.
+These checks do not perform a full GPU inference run or download model weights.
+
+## Repository layout
+
+```text
+app/                         FastAPI backend and PSD export
+frontend/                    Local web interface
+scripts/                     Installer, downloader, and launcher scripts
+tests/                       Lightweight project tests
+INSTALL_ANIME_LAYER_STUDIO.bat
+DOWNLOAD_MODELS.bat
+RUN_ANIME_LAYER_STUDIO.bat
+LICENSE                      License for original project files
+```
+
+---
+
+**Anime Layer Studio v1.0.0** · Built for local anime-art workflows.
