@@ -8,8 +8,8 @@ from .job_manager import manager
 from .psd_export import export_layers, export_zip, inspect_psd, render_layer
 
 ROOT = Path(__file__).resolve().parents[1]
-APP_VERSION = "0.4.7"
-app = FastAPI(title="Anime Layer Studio", version=APP_VERSION)
+APP_VERSION = "1.0.0"
+app = FastAPI(title="Anime Layer Studio", version=APP_VERSION, description="Local-first AI-assisted anime character layer decomposition, PSD inspection, and transparent PNG export. Upscaler is not included.")
 
 
 @app.get("/", response_class=HTMLResponse)
