@@ -4,6 +4,7 @@
 Turn a single character image into an editable layer stack, inspect the generated PSD, and export every layer as a transparent PNG.
 
 > **Version 1.0.0 · Initial release**  
+[Download the v1.0.0 source package](https://github.com/Zeron-62/Character_PNG_to_Rigging_Layers_V1/releases/tag/v1.0.0) (after the release is published).  
 > Windows 10/11 · NVIDIA GPU · Python 3.12  
 > **The upscaler is not included.** Model weights are downloaded separately and are not committed to this repository.
 
