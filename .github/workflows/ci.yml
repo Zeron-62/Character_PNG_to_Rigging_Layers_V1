@@ -18,3 +18,24 @@ jobs:
         run: python -m compileall -q app tests
       - name: Run unit tests
         run: python -m unittest discover -s tests -v
+  release-package:
+    runs-on: windows-latest
+    needs: test
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build source package (exclude models, third-party checkout, caches, and generated files)
+        shell: pwsh
+        run: |
+          $files = @(
+            '.github', 'app', 'frontend', 'scripts', 'tests',
+            '.gitattributes', '.gitignore', 'config.example.json',
+            'requirements.txt', 'LICENSE', 'README.md', 'RELEASE_NOTES_v1.0.0.md',
+            'INSTALL_ANIME_LAYER_STUDIO.bat', 'DOWNLOAD_MODELS.bat', 'RUN_ANIME_LAYER_STUDIO.bat'
+          )
+          New-Item -ItemType Directory -Force dist | Out-Null
+          Compress-Archive -Path $files -DestinationPath 'dist/AnimeLayerStudio-v1.0.0-source.zip' -Force
+      - uses: actions/upload-artifact@v4
+        with:
+          name: AnimeLayerStudio-v1.0.0-source
+          path: dist/AnimeLayerStudio-v1.0.0-source.zip
+
