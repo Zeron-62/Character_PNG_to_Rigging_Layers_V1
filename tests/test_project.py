@@ -13,7 +13,7 @@ class ProjectTests(unittest.TestCase):
         result = health()
         self.assertTrue(result["ok"])
         self.assertEqual(result["version"], APP_VERSION)
-        self.assertEqual(APP_VERSION, "1.0.0")
+        self.assertEqual(APP_VERSION, "1.1.0")
 
     def test_layer_export_routes_exist(self):
         paths = {route.path for route in app.routes}
