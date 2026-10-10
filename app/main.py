@@ -6,6 +6,7 @@ from fastapi.responses import FileResponse, HTMLResponse, StreamingResponse
 
 from .job_manager import manager
 from .psd_export import export_layers, export_zip, inspect_psd, render_layer
+from .memory_manager import manager as memory_manager
 
 ROOT = Path(__file__).resolve().parents[1]
 APP_VERSION = "1.0.0"
@@ -26,6 +27,26 @@ def health():
         "backend": "FastAPI + See-through V3",
         "model_downloads": "disabled; local model files required",
     }
+
+
+@app.get("/api/system/memory")
+def system_memory():
+    """Read-only system RAM/VRAM/disk telemetry and conservative advice."""
+    return memory_manager.snapshot()
+
+
+@app.get("/api/system/models")
+def system_models(refresh: bool = False):
+    """Inventory locally cached models without loading, moving, or downloading them."""
+    return memory_manager.model_inventory(force=refresh)
+
+
+@app.get("/api/system/streaming-plan")
+def system_streaming_plan(stage: str = "layer_decomposition", mode: str = "blockswap"):
+    """Return a Phase 1 placement plan; this endpoint does not activate streaming."""
+    if mode not in {"blockswap", "quantized"}:
+        raise HTTPException(400, "Mode must be blockswap or quantized")
+    return memory_manager.placement_plan(stage=stage, mode=mode)
 
 
 @app.post("/api/jobs")
