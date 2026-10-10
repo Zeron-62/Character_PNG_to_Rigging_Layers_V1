@@ -4,3 +4,4 @@ python-multipart>=0.0.20
 pillow>=11.0
 psd-tools>=1.10
 pydantic>=2.10
+psutil>=6.0
