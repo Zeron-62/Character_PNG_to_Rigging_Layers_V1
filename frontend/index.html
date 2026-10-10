@@ -18,7 +18,20 @@ footer{margin:24px 0 36px;color:var(--muted);font-size:12px}
 </style>
 </head>
 <body>
-<header><h1>Anime Layer Studio <span class="pill">v0.4.7</span></h1><div class="sub">See-through V3 · Character layer decomposition · PSD inspector · Full-canvas PNG export</div></header>
+<header><h1>Anime Layer Studio <span class="pill">v1.1.0 · Phase 1</span></h1><div class="sub">See-through V3 · Character layer decomposition · PSD inspector · Full-canvas PNG export</div></header>
+<section class="card" id="memoryCard">
+  <div style="display:flex;justify-content:space-between;gap:12px;align-items:center;flex-wrap:wrap">
+    <div><h2 style="margin-bottom:4px">Memory &amp; model placement</h2><div class="sub">Phase 1 telemetry · read-only · no model downloads or moves</div></div>
+    <button type="button" onclick="refreshMemory()" style="width:auto">Refresh status</button>
+  </div>
+  <div class="grid" style="margin-top:12px">
+    <div><div class="muted">System RAM</div><div id="memoryRam" class="stage">Checking…</div><div id="memoryRamSub" class="meta"></div></div>
+    <div><div class="muted">GPU VRAM</div><div id="memoryGpu" class="stage">Checking…</div><div id="memoryGpuSub" class="meta"></div></div>
+    <div><div class="muted">Model/cache drive</div><div id="memoryDisk" class="stage">Checking…</div><div id="memoryDiskSub" class="meta"></div></div>
+    <div><div class="muted">Recommended action</div><div id="memoryPlan" class="stage">Checking…</div><div id="memoryPlanSub" class="meta"></div></div>
+  </div>
+  <details style="margin-top:14px"><summary style="cursor:pointer">Local model inventory</summary><div id="modelList" class="sub" style="margin-top:10px">Scanning existing model folders…</div></details>
+</section>
 <section class="card">
   <h2>Character decomposition</h2>
   <label for="file">Character image</label><input id="file" type="file" accept="image/png,image/jpeg,image/webp">
@@ -51,6 +64,41 @@ async function readResponse(response){
   const data=await response.json().catch(()=>({detail:'Unexpected server response'}));
   if(!response.ok)throw new Error(data.detail||'Request failed');
   return data;
+}
+
+async function refreshMemory(){
+  const summary=$('memoryPlan');
+  try{
+    const [system,inventory,plan]=await Promise.all([
+      readResponse(await fetch('/api/system/memory')),
+      readResponse(await fetch('/api/system/models')),
+      readResponse(await fetch('/api/system/streaming-plan?stage=layer_decomposition&mode=blockswap'))
+    ]);
+    const ram=system.ram||{};
+    $('memoryRam').textContent=ram.total_gb==null?'Unavailable':(ram.available_gb.toFixed(1)+' GB available');
+    $('memoryRamSub').textContent=ram.total_gb==null?'RAM telemetry unavailable':(ram.total_gb.toFixed(1)+' GB total · '+ram.percent+'% used');
+    const devices=(system.gpu&&system.gpu.devices)||[];
+    $('memoryGpu').textContent=devices.length?(devices[0].free_mb/1024).toFixed(1)+' GB free':'Not detected';
+    $('memoryGpuSub').textContent=devices.length?devices[0].name+' · '+devices[0].used_mb+'/'+devices[0].total_mb+' MB used':'Install/update NVIDIA drivers to expose nvidia-smi telemetry';
+    const disk=system.model_disk||{};
+    $('memoryDisk').textContent=disk.free_gb==null?'Unavailable':disk.free_gb.toFixed(1)+' GB free';
+    $('memoryDiskSub').textContent=disk.path||'Model cache path unavailable';
+    summary.textContent=(plan.system.recommendation&&plan.system.recommendation.summary)||'Status unavailable';
+    $('memoryPlanSub').textContent='Recommended mode: '+plan.recommended_mode+' · Phase 1 planning only';
+    $('memoryPlan').className='stage '+(plan.system.recommendation&&plan.system.recommendation.action==='ready_for_test'?'ok':'');
+    const list=$('modelList');list.replaceChildren();
+    inventory.models.forEach(model=>{
+      const row=document.createElement('div');row.style.padding='8px 0';row.style.borderBottom='1px solid #303746';
+      const title=document.createElement('strong');title.textContent=(model.present?'✓ ':'○ ')+model.label;
+      const meta=document.createElement('div');meta.className='meta';meta.textContent=model.present?(model.size_gb+' GB · '+model.path):'Not found in configured local cache';
+      row.append(title,meta);list.append(row);
+    });
+    const footer=document.createElement('div');footer.className='meta';footer.style.marginTop='10px';footer.textContent='Streaming is not enabled in Phase 1. The existing See-through Blockswap inference path is unchanged.';
+    list.append(footer);
+  }catch(error){
+    summary.textContent='Could not read memory status';
+    $('memoryPlanSub').textContent=error.message;
+  }
 }
 
 async function startJob(){
@@ -110,6 +158,7 @@ function showLayer(id,layer){
   $('preview').src=`/api/jobs/${id}/layer/${layer.id}/preview`;$('preview').style.display='block';
   $('layerinfo').textContent=`${layer.name} · canvas ${documentInfo.width} × ${documentInfo.height} · bounds [${layer.bbox.join(', ')}]`;
 }
+window.addEventListener('DOMContentLoaded', refreshMemory);
 </script>
 </body>
 </html>
