@@ -157,3 +157,16 @@ LICENSE                      License for original project files
 ---
 
 **Anime Layer Studio v1.0.0** · Built for local anime-art workflows.
+
+
+## Phase 1: memory telemetry and placement planning
+
+The Phase 1 branch adds a read-only **Memory & model placement** panel and three local API endpoints:
+
+- `GET /api/system/memory` — system RAM, NVIDIA VRAM (via `nvidia-smi`), model-volume free space, and conservative next-step advice.
+- `GET /api/system/models` — inventory of existing BF16/Blockswap and optional NF4 model folders. Inventory metadata is cached briefly.
+- `GET /api/system/streaming-plan?stage=layer_decomposition&mode=blockswap` — a proposed SSD/RAM/GPU placement plan for the selected pipeline stage.
+
+This phase is deliberately **observability and planning only**. It does not implement Colibrì-style SSD tensor streaming, load or unload model weights, move cache files, download models, or alter the existing See-through inference algorithm. The next phase should use measurements from this panel and inspect the upstream loader boundaries before introducing prefetch or eviction. The manager honours the configured `hf_home` path, so existing D: drive caches remain in place.
+
+The manager uses `psutil` for RAM telemetry and `nvidia-smi` for GPU memory reporting. If GPU telemetry is unavailable, the app continues to work and displays that limitation.
