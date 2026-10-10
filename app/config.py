@@ -10,6 +10,7 @@ DEFAULTS = {
     "hf_home": "models/huggingface",
     "workspace": "workspace",
     "max_jobs": 1,
+    "memory_manager": {"inventory_cache_seconds": 30, "gpu_reserve_mb": 1536, "ram_reserve_gb": 6},
 }
 
 def load_config():
