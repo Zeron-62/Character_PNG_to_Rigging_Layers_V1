@@ -9,7 +9,7 @@ from .psd_export import export_layers, export_zip, inspect_psd, render_layer
 from .memory_manager import manager as memory_manager
 
 ROOT = Path(__file__).resolve().parents[1]
-APP_VERSION = "1.1.0-phase1"
+APP_VERSION = "1.1.0"
 app = FastAPI(title="Anime Layer Studio", version=APP_VERSION, description="Local-first AI-assisted anime character layer decomposition, PSD inspection, transparent PNG export, and Phase 1 memory telemetry. Upscaler is not included.")
 
 
