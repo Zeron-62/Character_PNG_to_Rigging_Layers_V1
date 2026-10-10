@@ -180,7 +180,8 @@ class MemoryManager:
     def model_inventory(self, force: bool = False) -> dict[str, Any]:
         now = time.monotonic()
         with self._lock:
-            if not force and self._inventory_cache and now - self._inventory_at < 30:
+            cache_seconds = max(5, int(self.cfg.get("memory_manager", {}).get("inventory_cache_seconds", 30)))
+            if not force and self._inventory_cache and now - self._inventory_at < cache_seconds:
                 return self._inventory_cache
             models = []
             for model_id, label, folder in MODEL_SPECS:
@@ -208,7 +209,7 @@ class MemoryManager:
                 "disk_free_gb": round(free / (1024 ** 3), 2) if free is not None else None,
                 "models": models,
                 "scanned_at_unix": time.time(),
-                "cache_seconds": 30,
+                "cache_seconds": cache_seconds,
             }
             self._inventory_cache = payload
             self._inventory_at = now
@@ -257,10 +258,13 @@ class MemoryManager:
             "Keep Blockswap as the default for the 8 GB GPU. The backend remains responsible for actual tensor/block placement.",
             "Model files remain in the configured Hugging Face cache; no weights are downloaded or moved by this manager.",
         ]
-        if free_vram_mb is not None and free_vram_mb < 1200:
+        settings = self.cfg.get("memory_manager", {})
+        gpu_reserve_mb = max(512, int(settings.get("gpu_reserve_mb", 1536)))
+        ram_reserve_gb = max(2, float(settings.get("ram_reserve_gb", 6)))
+        if free_vram_mb is not None and free_vram_mb < gpu_reserve_mb:
             action = "close_gpu_apps"
             summary = "Very little GPU memory is free. Close GPU-heavy apps before starting a decomposition job."
-        elif available_ram_gb and available_ram_gb < 5:
+        elif available_ram_gb and available_ram_gb < ram_reserve_gb:
             action = "free_ram"
             summary = "System RAM is low. Close memory-heavy applications before starting a job."
         elif free_disk_gb is not None and free_disk_gb < 20:
