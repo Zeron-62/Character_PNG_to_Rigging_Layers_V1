@@ -19,4 +19,4 @@ jobs:
       - name: Compile Python source
         run: python -m compileall -q app scripts tests
       - name: Run memory-manager unit tests
-        run: python -m unittest tests.test_memory_manager -v
+        run: python -m unittest discover -s tests -p test_memory_manager.py -v
