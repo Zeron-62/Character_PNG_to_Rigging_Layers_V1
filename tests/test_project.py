@@ -13,13 +13,15 @@ class ProjectTests(unittest.TestCase):
         result = health()
         self.assertTrue(result["ok"])
         self.assertEqual(result["version"], APP_VERSION)
-        self.assertEqual(APP_VERSION, "1.0.0")
+        self.assertEqual(APP_VERSION, "2.0.0")
 
     def test_layer_export_routes_exist(self):
         paths = {route.path for route in app.routes}
         self.assertIn("/api/jobs/{jid}/inspect", paths)
         self.assertIn("/api/jobs/{jid}/layer/{layer_id}/preview", paths)
         self.assertIn("/api/jobs/{jid}/export_zip", paths)
+        self.assertIn("/api/jobs/{jid}/upscale", paths)
+        self.assertIn("/api/jobs/{jid}/upscale_zip", paths)
 
     def test_export_name_is_filesystem_safe(self):
         self.assertEqual(_safe("hair/front: left"), "hair_front__left")
@@ -31,6 +33,9 @@ class ProjectTests(unittest.TestCase):
             "INSTALL_ANIME_LAYER_STUDIO.bat",
             "DOWNLOAD_MODELS.bat",
             "RUN_ANIME_LAYER_STUDIO.bat",
+            "requirements-upscaler.txt",
+            "app/upscaler.py",
+            "scripts/download_upscaler.py",
         ):
             with self.subTest(filename=filename):
                 self.assertTrue((ROOT / filename).is_file())
