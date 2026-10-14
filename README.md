@@ -3,10 +3,10 @@
 **AI-assisted anime character decomposition for layered 2D animation workflows.**  
 Turn a single character image into an editable layer stack, inspect the generated PSD, and export every layer as a transparent PNG.
 
-> **Version 1.0.0 · Initial release**  
-[Download the v1.0.0 source package](https://github.com/Zeron-62/Character_PNG_to_Rigging_Layers_V1/releases/tag/v1.0.0) (after the release is published).  
+> **Version 2.0.0 · 4× anime upscaling**  
+[Download the v2.0.0 release](https://github.com/Zeron-62/Character_PNG_to_Rigging_Layers_V1/releases/tag/v2.0.0).  
 > Windows 10/11 · NVIDIA GPU · Python 3.12  
-> **The upscaler is not included.** Model weights are downloaded separately and are not committed to this repository.
+> **Includes optional 4× Real-ESRGAN anime upscaling.** Model weights are downloaded separately and are not committed to this repository.
 
 <p align="center">
   <strong>Decompose → Inspect → Export → Animate</strong>
@@ -24,6 +24,7 @@ Anime Layer Studio provides a local web interface around the See-through V3 infe
 - **PSD layer inspector** with layer previews, dimensions, visibility, and bounds.
 - **Transparent PNG export** with full-canvas alignment.
 - **One-click ZIP export** of the decomposed PNG layers.
+- **4× Real-ESRGAN anime upscaling** for all exported transparent PNG layers, with tile-based inference and alpha preservation.
 - **Local-first interface** bound to `127.0.0.1`.
 
 ## Quick start
@@ -52,8 +53,9 @@ This setup uses its own virtual environment; it should not replace packages in o
 1. Double-click **`DOWNLOAD_MODELS.bat`**.
 2. Choose the default **Blockswap** models first. The standard pair is approximately **13.5 GB** (upstream sizes may change).
 3. The downloader verifies the downloaded model folders before it exits. If interrupted, run the same file again to retry.
+4. When prompted, choose `Y` to download the optional Real-ESRGAN anime 6B weights (about 17 MB). This is separate from the 13.5 GB decomposition models.
 
-Optional NF4 models add approximately 5 GB and require additional dependencies. Use the NF4 option only if you intend to run the experimental quantized mode.
+Optional NF4 models add approximately 5 GB and require additional dependencies. Use the NF4 option only if you intend to run the experimental quantized mode. The upscaler model is a separate optional download.
 
 ### 4. Launch
 
@@ -70,6 +72,8 @@ Upload a PNG, JPEG, or WebP character image, start with **Blockswap**, and run d
 | `INSTALL_ANIME_LAYER_STUDIO.bat` | Creates the local Python environment and installs dependencies |
 | `DOWNLOAD_MODELS.bat` | Downloads the standard models and offers optional NF4 models |
 | `RUN_ANIME_LAYER_STUDIO.bat` | Starts the local web interface |
+
+The installer also installs the upscaler's Python dependencies. The model weights remain an explicit download through `DOWNLOAD_MODELS.bat`.
 
 If a launcher fails, keep its terminal window open and read the error message before closing it.
 
@@ -88,6 +92,15 @@ Experimental NF4 models:
 - [24yearsold/seethroughv0.0.1_marigold_nf4](https://huggingface.co/24yearsold/seethroughv0.0.1_marigold_nf4)
 
 The folders must contain `model_index.json`. Do not rename them after downloading.
+
+### 4× anime upscaler
+
+- **Model:** [Real-ESRGAN x4plus anime 6B](https://github.com/xinntao/Real-ESRGAN)
+- **Local weights:** `models/upscaler/RealESRGAN_x4plus_anime_6B.pth`
+- **Scale:** 4× per dimension (a 1024×1024 layer becomes 4096×4096)
+- **Default tile:** 128 pixels to limit VRAM use; processing is one PNG at a time.
+
+After a decomposition job completes, click **UPSCALE LAYERS 4×**. The app exports PSD layers if needed, upscales each PNG without overwriting the original, and provides a ZIP of the 4× outputs. This is a separate stage after See-through finishes; it does not run both models concurrently. Large layers can take time. If CUDA runs out of memory, close GPU-heavy apps and retry.
 
 ## Example workflow
 
@@ -108,7 +121,7 @@ The root [MIT License](LICENSE) applies to the original Anime Layer Studio proje
 - The app binds to `127.0.0.1` and is intended for local use.
 - Do not expose the local server to the public internet.
 - Your model files, uploaded images, jobs, logs, and outputs are local files; keep them out of Git commits.
-- The upscaler and its dependencies are not part of this release.
+- The Real-ESRGAN model weights are downloaded separately and are not part of the source ZIP.
 
 ## Troubleshooting
 
@@ -156,4 +169,4 @@ LICENSE                      License for original project files
 
 ---
 
-**Anime Layer Studio v1.0.0** · Built for local anime-art workflows.
+**Anime Layer Studio v2.0.0** · Built for local anime-art workflows.
