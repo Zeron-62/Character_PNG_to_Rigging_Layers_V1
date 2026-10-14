@@ -36,6 +36,6 @@ jobs:
           Compress-Archive -Path $files -DestinationPath 'dist/AnimeLayerStudio-v2.0.0-source.zip' -Force
       - uses: actions/upload-artifact@v4
         with:
-          name: AnimeLayerStudio-v1.0.0-source
-          path: dist/AnimeLayerStudio-v1.0.0-source.zip
+          name: AnimeLayerStudio-v2.0.0-source
+          path: dist/AnimeLayerStudio-v2.0.0-source.zip
 
