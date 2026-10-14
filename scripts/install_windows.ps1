@@ -2,7 +2,7 @@ $ErrorActionPreference = "Stop"
 $root = Split-Path $PSScriptRoot -Parent
 Set-Location $root
 
-Write-Host "Installing Anime Layer Studio v0.4.7 (no upscaler)" -ForegroundColor Cyan
+Write-Host "Installing Anime Layer Studio v2.0.0 with optional Real-ESRGAN upscaler" -ForegroundColor Cyan
 Write-Host "A local .venv will be used so your other Python projects are not modified." -ForegroundColor Gray
 
 $pyLauncher = Get-Command py -ErrorAction SilentlyContinue
@@ -56,6 +56,10 @@ try {
 Write-Host "Installing Anime Layer Studio backend dependencies..." -ForegroundColor Cyan
 & $venvPython -m pip install -r (Join-Path $root "requirements.txt")
 if ($LASTEXITCODE -ne 0) { throw "Anime Layer Studio backend dependencies failed to install." }
+
+Write-Host "Installing Real-ESRGAN anime upscaler dependencies..." -ForegroundColor Cyan
+& $venvPython -m pip install -r (Join-Path $root "requirements-upscaler.txt")
+if ($LASTEXITCODE -ne 0) { throw "Upscaler dependencies failed to install. Review the error above and retry setup." }
 
 if (!(Test-Path (Join-Path $root "config.json"))) {
     Copy-Item (Join-Path $root "config.example.json") (Join-Path $root "config.json")
