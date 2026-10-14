@@ -6,10 +6,11 @@ from fastapi.responses import FileResponse, HTMLResponse, StreamingResponse
 
 from .job_manager import manager
 from .psd_export import export_layers, export_zip, inspect_psd, render_layer
+from .upscaler import upscale_png_directory, zip_upscaled_layers
 
 ROOT = Path(__file__).resolve().parents[1]
-APP_VERSION = "1.0.0"
-app = FastAPI(title="Anime Layer Studio", version=APP_VERSION, description="Local-first AI-assisted anime character layer decomposition, PSD inspection, and transparent PNG export. Upscaler is not included.")
+APP_VERSION = "2.0.0"
+app = FastAPI(title="Anime Layer Studio", version=APP_VERSION, description="Local-first AI-assisted anime character layer decomposition, PSD inspection, transparent PNG export, and 4x Real-ESRGAN anime upscaling.")
 
 
 @app.get("/", response_class=HTMLResponse)
@@ -139,3 +140,35 @@ def export_job_layers_zip(jid: str):
     output_dir = job.workdir / "layers_png"
     zip_path, _files = export_zip(job.output_psd, output_dir)
     return FileResponse(zip_path, media_type="application/zip", filename="anime_layers.zip")
+
+
+@app.post("/api/jobs/{jid}/upscale")
+def upscale_job_layers(jid: str, tile: int = 128):
+    """Upscale exported PSD layers 4x after the decomposition subprocess has finished."""
+    job = manager.get(jid)
+    if not job or job.status != "completed" or not job.output_psd:
+        raise HTTPException(409, "Decomposition must be complete before upscaling")
+    layer_dir = job.workdir / "layers_png"
+    try:
+        if not layer_dir.is_dir() or not any(layer_dir.glob("*.png")):
+            export_layers(job.output_psd, layer_dir)
+        output_dir = job.workdir / "layers_png_4x"
+        if output_dir.exists():
+            import shutil
+            shutil.rmtree(output_dir)
+        files = upscale_png_directory(layer_dir, output_dir, tile=tile)
+        archive = zip_upscaled_layers(files, job.workdir / "anime_layers_4x.zip")
+        return {"count": len(files), "scale": 4, "tile": tile, "download": f"/api/jobs/{jid}/upscale_zip", "archive": archive.name}
+    except FileNotFoundError as exc:
+        raise HTTPException(409, str(exc)) from exc
+    except Exception as exc:
+        raise HTTPException(500, f"Upscaling failed: {exc}") from exc
+
+
+@app.get("/api/jobs/{jid}/upscale_zip")
+def download_upscaled_layers(jid: str):
+    job = manager.get(jid)
+    archive = job.workdir / "anime_layers_4x.zip" if job else None
+    if not job or not archive or not archive.is_file():
+        raise HTTPException(404, "Upscaled layer ZIP is not ready. Run upscaling first.")
+    return FileResponse(archive, media_type="application/zip", filename="anime_layers_4x.zip")
