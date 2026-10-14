@@ -1,0 +1,46 @@
+name: Publish v2.0.0 release
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  test-and-release:
+    runs-on: windows-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install backend requirements
+        run: python -m pip install -r requirements.txt
+      - name: Compile Python modules
+        run: python -m compileall -q app scripts tests
+      - name: Run unit tests
+        run: python -m unittest discover -s tests -v
+      - name: Build clean v2.0.0 source package
+        shell: pwsh
+        run: |
+          $files = @(
+            '.github', 'app', 'frontend', 'scripts', 'tests',
+            '.gitattributes', '.gitignore', 'config.example.json',
+            'requirements.txt', 'requirements-upscaler.txt', 'LICENSE', 'README.md',
+            'RELEASE_NOTES_v2.0.0.md',
+            'INSTALL_ANIME_LAYER_STUDIO.bat', 'DOWNLOAD_MODELS.bat', 'RUN_ANIME_LAYER_STUDIO.bat'
+          )
+          New-Item -ItemType Directory -Force dist | Out-Null
+          Compress-Archive -Path $files -DestinationPath 'dist/AnimeLayerStudio-v2.0.0-source.zip' -Force
+      - name: Publish GitHub Release v2.0.0
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v2.0.0
+          name: Anime Layer Studio v2.0.0 — 4× Anime Upscaling
+          body_path: RELEASE_NOTES_v2.0.0.md
+          files: dist/AnimeLayerStudio-v2.0.0-source.zip
+          draft: false
+          prerelease: false
+          make_latest: true
