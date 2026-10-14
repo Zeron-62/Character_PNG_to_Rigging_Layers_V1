@@ -76,5 +76,5 @@ if ($LASTEXITCODE -ne 0) {
 }
 
 Write-Host "Setup complete." -ForegroundColor Green
-Write-Host "Next: double-click DOWNLOAD_MODELS.bat (about 13.5 GB for the default models)." -ForegroundColor Green
+Write-Host "Next: double-click DOWNLOAD_MODELS.bat (about 13.5 GB default models, plus optional NF4 and Real-ESRGAN weights)." -ForegroundColor Green
 Write-Host "Then: double-click RUN_ANIME_LAYER_STUDIO.bat." -ForegroundColor Green
